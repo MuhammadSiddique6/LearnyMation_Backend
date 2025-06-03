@@ -18,6 +18,7 @@ app.use("/api/children", require("./routes/user"));
 app.use("/api/progress", require("./routes/user"));
 app.use("/api/order", require("./routes/order"));
 app.use("/api/quiz", require("./routes/quiz"));
+app.use("/api/ai", require("./AI"));
 
 
 

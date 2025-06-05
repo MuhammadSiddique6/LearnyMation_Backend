@@ -1,8 +1,8 @@
 const express = require('express');
 const { PythonShell } = require('python-shell');
 const router = express.Router();
-const QuizResult = require('./models/quiz');
-const { verifytoken } = require('./middleware/verifytoken');
+const QuizResult = require('../models/quiz');
+const { verifytoken } = require('../middleware/verifytoken');
 
 /**
  * @route POST /api/ai/predict
@@ -85,79 +85,89 @@ router.post('/predict', async (req, res) => {
  * @desc Get AI prediction based on user's quiz scores from MongoDB
  * @access Private (requires authentication)
  */
-router.get('/prediction/:email', verifytoken, async (req, res) => {
+// Normalization function (used only when needed)
+const normalizeScores = (scores, quizCompletedCount) => {
+  return scores.map(score => {
+    const normalized = Math.round((score / (5 * quizCompletedCount)) * 10);
+    return Math.min(normalized, 5); // Clip to max 5
+  });
+};
+
+router.get('/prediction', verifytoken, async (req, res) => {
   try {
-    const { email } = req.params;
-    
-    // Verify if the email from params matches the authenticated user's email
-    if (req.email !== email) {
-      return res.status(403).json({
+  const email = req.email;
+
+    // Authorization check
+    if (!email) {
+      return res.status(404).json({
         success: false,
         message: 'You are not authorized to access this data'
       });
     }
-    
-    // Find the quiz result for this user
+
+    // Fetch quiz result
     const quizResult = await QuizResult.findOne({ email });
-    
+
     if (!quizResult) {
       return res.status(404).json({
         success: false,
         message: 'No quiz results found for this user'
       });
     }
-    
-    // Extract scores from the quiz result and convert to array format for the Python script
+
+    // Extract raw scores
     const scoresObj = quizResult.scores;
-    const scoresArray = [
+    const rawScores = [
       scoresObj.Math || 0,
       scoresObj.Science || 0,
       scoresObj.LogicThinking || 0,
       scoresObj.Creativity || 0,
       scoresObj.ObjectDetection || 0
     ];
-    
-    // Options for PythonShell
+
+    const quizCompletedCount = quizResult.quizCompletedCount || 1;
+
+    // Conditionally normalize scores
+    const finalScores = quizCompletedCount > 1
+      ? normalizeScores(rawScores, quizCompletedCount)
+      : rawScores.map(score => Math.min(score, 5)); // Clip to max 5
+
+    // Run Python prediction script
     const options = {
       mode: 'json',
-      pythonPath: 'python', // Use 'python3' if needed for your environment
-      args: scoresArray
+      pythonPath: 'python',
+      args: finalScores
     };
-    
-    // Run the Python script with the user's scores
+
     const pyshell = new PythonShell('predicted_api.py', options);
-    
     let result = null;
-    
+
     pyshell.on('message', (message) => {
       result = message;
     });
-    
+
     await new Promise((resolve, reject) => {
       pyshell.end((err) => {
-        if (err) {
-          reject(err);
-        }
-        resolve();
+        if (err) reject(err);
+        else resolve();
       });
     });
-    
+
     if (!result) {
       return res.status(500).json({
         success: false,
         message: 'Failed to get prediction results'
       });
     }
-    
+
     return res.status(200).json({
       success: true,
       data: {
         ...result,
-        quizCompletedCount: quizResult.quizCompletedCount,
-        totalScore: quizResult.totalScore
+        quizCompletedCount,
       }
     });
-    
+
   } catch (error) {
     console.error('AI Prediction Error:', error);
     return res.status(500).json({

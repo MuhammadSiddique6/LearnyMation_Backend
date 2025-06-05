@@ -20,13 +20,14 @@ exports.getProgress = async (req, res) => {
 
     const quizRecords = await Quiz.find({ email: userEmail });
 
-    const totalQuizzes = quizRecords.length;
+const totalQuizzes = quizRecords.reduce((sum, q) => sum + (q.quizCompletedCount || 0), 0);
     const totalTimeSpent = quizRecords.reduce((sum, q) => sum + (q.timeSpent || 0), 0);
     const totalScoreSum = quizRecords.reduce((sum, q) => sum + (q.totalScore || 0), 0);
-
+console.log(totalQuizzes)
     const averageScorePercentage = totalQuizzes > 0
-      ? (totalScoreSum / (totalQuizzes * 25)) * 100
-      : 0;
+  ? Math.min((totalScoreSum / (totalQuizzes * 25)) * 100, 100)
+  : 0;
+
 
     // Accumulate raw scores
     const categoryTotalsRaw = {

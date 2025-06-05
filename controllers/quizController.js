@@ -23,7 +23,7 @@ exports.quiz = async (req, res) => {
   try {
     const userId = req.userId; 
     const email = req.email; // extracted from JWT
-    const { scores, totalScore } = req.body;
+    const { scores, totalScore,timeSpent } = req.body;
     console.log(userId,email);
     let result = await QuizResult.findOne({ email });
 
@@ -31,7 +31,7 @@ exports.quiz = async (req, res) => {
       // Update existing result
       result.totalScore += Number(totalScore);
       result.quizCompletedCount += 1;
-
+      result.timeSpent = timeSpent;
       // Update scores safely
       for (const category in scores) {
         if (result.scores.hasOwnProperty(category)) {
@@ -56,6 +56,7 @@ exports.quiz = async (req, res) => {
         },
         totalScore: Number(totalScore),
         quizCompletedCount: 1,
+        timeSpent
       });
 
       await result.save();

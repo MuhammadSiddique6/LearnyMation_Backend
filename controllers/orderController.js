@@ -1,7 +1,7 @@
 const Order = require("../models/order");
 
 exports.Order = async (req, res) => {
-    const email = req.user.email;
+    const email = req.email;
     const { productId, productName, mobile, address } = req.body;
 
   if (!productId || !productName || !mobile || !address) {

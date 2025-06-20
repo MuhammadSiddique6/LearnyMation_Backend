@@ -1,18 +1,20 @@
-const Quiz = require('../models/quiz');
-const User = require('../models/user');
+const Quiz = require("../models/quiz");
+const User = require("../models/user");
 
 exports.getProgress = async (req, res) => {
   const userEmail = req.email;
 
   if (!userEmail) {
-    return res.status(401).json({ message: 'Unauthorized: User email not found in token' });
+    return res
+      .status(401)
+      .json({ message: "Unauthorized: User email not found in token" });
   }
 
   try {
     const user = await User.findOne({ email: userEmail });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     console.log("User found:", user._id);
@@ -20,14 +22,23 @@ exports.getProgress = async (req, res) => {
 
     const quizRecords = await Quiz.find({ email: userEmail });
 
-const totalQuizzes = quizRecords.reduce((sum, q) => sum + (q.quizCompletedCount || 0), 0);
-    const totalTimeSpent = quizRecords.reduce((sum, q) => sum + (q.timeSpent || 0), 0);
-    const totalScoreSum = quizRecords.reduce((sum, q) => sum + (q.totalScore || 0), 0);
-console.log(totalQuizzes)
-    const averageScorePercentage = totalQuizzes > 0
-  ? Math.min((totalScoreSum / (totalQuizzes * 25)) * 100, 100)
-  : 0;
-
+    const totalQuizzes = quizRecords.reduce(
+      (sum, q) => sum + (q.quizCompletedCount || 0),
+      0
+    );
+    const totalTimeSpent = quizRecords.reduce(
+      (sum, q) => sum + (q.timeSpent || 0),
+      0
+    );
+    const totalScoreSum = quizRecords.reduce(
+      (sum, q) => sum + (q.totalScore || 0),
+      0
+    );
+    console.log(totalQuizzes);
+    const averageScorePercentage =
+      totalQuizzes > 0
+        ? Math.min((totalScoreSum / (totalQuizzes * 25)) * 100, 100)
+        : 0;
 
     // Accumulate raw scores
     const categoryTotalsRaw = {
@@ -67,9 +78,8 @@ console.log(totalQuizzes)
       achievements: user.achievements || [],
       totalScoresBySubject: categoryTotals,
     });
-
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: "Internal server error" });
   }
 };

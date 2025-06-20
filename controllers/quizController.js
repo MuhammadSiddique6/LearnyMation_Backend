@@ -1,6 +1,7 @@
 const QuizResult = require("../models/quiz");
 const User = require("../models/user");
 
+// ─── Update streak logic ─────────────────────────────────────────────────────
 const updateStreak = (lastDate) => {
   if (!lastDate) return 1; // First activity
 
@@ -19,32 +20,68 @@ const updateStreak = (lastDate) => {
   }
 };
 
+// ─── Determine level from total points ───────────────────────────────────────
+const determineLevel = (points) => {
+  if (points >= 400) return 5;
+  if (points >= 300) return 4;
+  if (points >= 200) return 3;
+  if (points >= 100) return 2;
+  return 1;
+};
+
+// ─── Unlock achievement if a new level is reached ────────────────────────────
+const levelAchievementMap = {
+  2: 'Math Pro',
+  3: 'Science Whiz',
+  4: 'Nature Expert',
+  5: 'Quiz Champion',
+};
+
+const unlockAchievementForLevel = (user, level) => {
+  const achName = levelAchievementMap[level];
+  if (!achName) return;
+
+  let achievement = user.achievements.find((a) => a.name === achName);
+
+  if (!achievement) {
+    achievement = user.achievements.find((a) => a.name === 'Locked');
+    if (achievement) {
+      achievement.name = achName;
+    } else {
+      achievement = { name: achName };
+      user.achievements.push(achievement);
+    }
+  }
+
+  achievement.unlocked = true;
+};
+
+// ─── Main quiz controller ────────────────────────────────────────────────────
 exports.quiz = async (req, res) => {
   try {
     const userId = req.userId; 
     const email = req.email; // extracted from JWT
-    const { scores, totalScore,timeSpent } = req.body;
-    console.log(userId,email);
+    const { scores, totalScore, timeSpent } = req.body;
+    console.log(userId, email);
+
+    // ─── Save/update Quiz Result ─────────────────────────────────────────────
     let result = await QuizResult.findOne({ email });
 
     if (result) {
-      // Update existing result
       result.totalScore += Number(totalScore);
       result.quizCompletedCount += 1;
       result.timeSpent = timeSpent;
-      // Update scores safely
+
       for (const category in scores) {
         if (result.scores.hasOwnProperty(category)) {
           result.scores[category] += Number(scores[category]);
         } else {
-          // in case a new category appears
           result.scores[category] = Number(scores[category]);
         }
       }
 
       await result.save();
     } else {
-      // Create new result
       result = new QuizResult({
         email,
         scores: {
@@ -56,13 +93,13 @@ exports.quiz = async (req, res) => {
         },
         totalScore: Number(totalScore),
         quizCompletedCount: 1,
-        timeSpent
+        timeSpent,
       });
 
       await result.save();
     }
 
-    // Update user streak and quizzesCompleted
+    // ─── Update user profile: streak, level, achievements ────────────────────
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -72,13 +109,19 @@ exports.quiz = async (req, res) => {
     const streakUpdate = updateStreak(user.lastActivityDate);
 
     if (streakUpdate === 1) {
-      user.streak = 1; // reset streak
+      user.streak = 1;
     } else if (streakUpdate === null) {
-      user.streak += 1; // increment streak
+      user.streak += 1;
     }
-    // if streakUpdate === -1, do nothing (same day)
 
     user.points += Number(totalScore);
+    const newLevel = determineLevel(user.points);
+
+    if (newLevel > user.level) {
+      user.level = newLevel;
+      unlockAchievementForLevel(user, newLevel);
+    }
+
     user.lastActivityDate = new Date();
     user.quizzesCompleted += 1;
 

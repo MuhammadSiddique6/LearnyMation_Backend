@@ -18,11 +18,11 @@ const userSchema = new mongoose.Schema({
   achievements: { 
     type: [achievementSchema], 
     default: [
-      { name: 'Math Pro', unlocked: false },
-      { name: 'Science Whiz', unlocked: false },
-      { name: 'Nature Expert', unlocked: false },
-      { name: 'Locked', unlocked: false },
-      { name: 'Locked', unlocked: false },
+      { name: 'Trainee', unlocked: false },
+      { name: 'Beginner', unlocked: false },
+      { name: 'Expert', unlocked: false },
+      { name: 'Master', unlocked: false },
+      { name: 'Professional', unlocked: false },
     ] 
   },
   token: { type: String }, // Store JWT token if needed (optional)

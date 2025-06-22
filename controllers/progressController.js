@@ -5,11 +5,10 @@ exports.getProgress = async (req, res) => {
   const userEmail = req.email;
 
   if (!userEmail) {
-    return res
-      .status(401)
-      .json({ message: "Unauthorized: User email not found in token" });
-  }
-
+  return res
+    .status(401)
+    .json({ message: "Unauthorized: User email not found in token" });
+}
   try {
     const user = await User.findOne({ email: userEmail });
 
@@ -76,6 +75,7 @@ exports.getProgress = async (req, res) => {
       timeSpentInSeconds: totalTimeSpent,
       averageScorePercentage: averageScorePercentage.toFixed(2),
       achievements: user.achievements || [],
+      level:user.level,
       totalScoresBySubject: categoryTotals,
     });
   } catch (err) {

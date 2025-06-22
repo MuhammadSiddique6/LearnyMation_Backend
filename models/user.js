@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
   achievements: { 
     type: [achievementSchema], 
     default: [
-      { name: 'Trainee', unlocked: false },
+      { name: 'Trainee', unlocked: true  },
       { name: 'Beginner', unlocked: false },
       { name: 'Expert', unlocked: false },
       { name: 'Master', unlocked: false },

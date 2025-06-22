@@ -31,10 +31,10 @@ const determineLevel = (points) => {
 
 // ─── Unlock achievement if a new level is reached ────────────────────────────
 const levelAchievementMap = {
-  2: 'Math Pro',
-  3: 'Science Whiz',
-  4: 'Nature Expert',
-  5: 'Quiz Champion',
+  2: 'Beginner',
+  3: 'Expert',
+  4: 'Master',
+  5: 'Professional',
 };
 
 const unlockAchievementForLevel = (user, level) => {
@@ -70,7 +70,7 @@ exports.quiz = async (req, res) => {
     if (result) {
       result.totalScore += Number(totalScore);
       result.quizCompletedCount += 1;
-      result.timeSpent = timeSpent;
+result.timeSpent += Number(timeSpent);
 
       for (const category in scores) {
         if (result.scores.hasOwnProperty(category)) {
